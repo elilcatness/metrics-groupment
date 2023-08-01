@@ -19,4 +19,10 @@ def write_row(filename: str, fieldnames: list, row: dict, delimiter: str = ';'):
         DictWriter(f, fieldnames, delimiter=delimiter).writerow(row)
 
 
-__all__ = ['get_phrases', 'write_header', 'write_row']
+def get_mask_words(common: dict, phrases_count: int, key=None, reverse: bool = False):
+    return sorted([d for d in common.items()
+                   if d[1]['phrases_count'] >= phrases_count],
+                  key=key, reverse=reverse)
+
+
+__all__ = ['get_phrases', 'write_header', 'write_row', 'get_mask_words']
