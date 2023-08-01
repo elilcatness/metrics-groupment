@@ -17,10 +17,10 @@ def main():
     min_k = get_min_k()
     round_digits_count = get_round_digits_count()
     rest_fieldnames = ['Phrases', 'Metrics', 'Similar phrase']
-    output_fieldnames = ['Phrases', 'Metrics', 'Similar phrase', 'Group', 'Group_name']
+    output_fieldnames = ['Phrases', 'Metrics', 'Similar phrase',
+                         'Group', 'Group_name', 'Mask']
     write_header(rest_filename, rest_fieldnames)
     write_header(output_filename, output_fieldnames)
-    # groups, out = [], []
     groups_count = 0
     for i in range(len(phrases) - 1):
         decent_phrases = []
@@ -38,8 +38,9 @@ def main():
         else:
             groups_count += 1
         rows = []
-        freq = dict()
-        # words = dict()
+        freq = dict()  # dictionary of words' entry frequency
+        common = dict()  # fixed-position frequencies
+        phrases_count = len(decent_phrases) + 1
         for k, item in enumerate([(phrases[i], 0)] + decent_phrases):
             ph, m_val = item
             if k > 0:
@@ -52,12 +53,28 @@ def main():
                 if word not in processed_words:
                     freq[word] = freq.get(word, 0) + 1
                     processed_words.append(word)
-        group_name = ' '.join([key for key, _ in sorted(
+                    if word not in common:
+                        common[word] = {'phrases_count': 1}
+                    else:
+                        common[word]['phrases_count'] += 1
+                    # noinspection PyTypeChecker
+                    common[word][pos] = common[word].get(pos, 0) + 1
+        group_words = [key for key, _ in sorted(
             freq.items(), key=lambda it: (
                 -it[1],
-                [ord(s) if s not in punct else punct.index(s) for s in it[0]]))])
+                [ord(s) if s not in punct else punct.index(s) for s in it[0]]))]
+        group_name = ' '.join(group_words)
+        mask_words = []
+        for mask_word, _ in sorted([
+            d for d in common.items()
+            if d[1].pop('phrases_count') >= phrases_count],
+                key=lambda d: [(key, -val) for key, val in d[1].items()]):
+            group_words.remove(mask_word)
+            mask_words.append(mask_word)
+        mask = (f'[{" ".join(mask_words)}] ' if mask_words else '') + ' '.join(group_words)
         for row in rows:
-            write_row(output_filename, output_fieldnames, {**row, 'Group_name': group_name})
+            write_row(output_filename, output_fieldnames,
+                      {**row, 'Group_name': group_name, 'Mask': mask})
 
 
 if __name__ == '__main__':
