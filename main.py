@@ -1,4 +1,5 @@
 import os
+from logging import basicConfig
 from string import punctuation as punct
 from dotenv import load_dotenv
 
@@ -6,7 +7,7 @@ from alive_progress import alive_bar
 
 from src.interface import *
 from src.utils import *
-from src.metrics import s_metric
+from src.metrics import metric
 from src.constants import MASK_MODES, DEFAULT_MASK_MODE
 
 
@@ -46,7 +47,7 @@ def main():
             decent_phrases = []
             max_phrase_out, max_val_out = None, 0
             for j in range(i + 1, len(phrases)):
-                if (metric_val := s_metric(list(phrases[i]), list(phrases[j]))) >= min_k:
+                if (metric_val := metric(phrases[i], phrases[j])) >= min_k:
                     decent_phrases.append((phrases[j], metric_val))
                 elif metric_val > max_val_out:
                     max_phrase_out, max_val_out = phrases[j], metric_val
@@ -69,7 +70,6 @@ def main():
                     rows.append({'Phrases': phrases[i], 'Metrics': round(m_val, round_digits_count),
                                  'Similar phrase': ph, 'Group': groups_count})
                 words = ph.split()
-                words_count = len(words)
                 processed_words = []
                 for pos, word in enumerate(words):
                     word = word.lower()
@@ -115,4 +115,7 @@ def main():
 
 if __name__ == '__main__':
     load_dotenv()
+    basicConfig(filename=os.getenv('logs_filename', 'logs.log'),
+                format='[%(asctime)s] %(message)s',
+                encoding='utf-8', filemode='w')
     main()
